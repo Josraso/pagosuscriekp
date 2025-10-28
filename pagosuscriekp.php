@@ -45,6 +45,7 @@ class PagoSuscriekp extends PaymentModule
             || !$this->registerHook('paymentOptions')
             || !$this->registerHook('paymentReturn')
             || !$this->registerHook('displayAdminOrder')
+            || !$this->registerHook('displayBackOfficeHeader')
             || !$this->registerHook('actionCronJob')
         ) {
             return false;
@@ -547,6 +548,44 @@ class PagoSuscriekp extends PaymentModule
      */
     private function renderConfigTab()
     {
+        // Verificar si hay planes activos
+        $plans = $this->getPlans();
+        $active_plans_count = 0;
+        foreach ($plans as $plan) {
+            if ($plan['active']) {
+                $active_plans_count++;
+            }
+        }
+
+        $warnings = '';
+        if ($active_plans_count == 0) {
+            $warnings .= '<div class="alert alert-warning">
+                <h4><i class="icon-warning"></i> ' . $this->l('No hay planes de suscripción activos') . '</h4>
+                <p>' . $this->l('Para que el método de pago aparezca en el checkout, necesitas crear al menos un plan de suscripción activo.') . '</p>
+                <p><a href="index.php?controller=AdminModules&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name . '&token=' . Tools::getAdminTokenLite('AdminModules') . '&module_section=planes" class="btn btn-primary">
+                    <i class="icon-plus"></i> ' . $this->l('Crear primer plan') . '
+                </a></p>
+            </div>';
+        }
+
+        // Información del Cron
+        $cron_info = '<div class="alert alert-info">
+            <h4><i class="icon-info"></i> ' . $this->l('Configuración del Cron para recordatorios de pago') . '</h4>
+            <p>' . $this->l('Para que se envíen automáticamente los recordatorios de pago, debes configurar una tarea cron en tu servidor.') . '</p>
+            <h5>' . $this->l('Comando del Cron:') . '</h5>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">*/5 * * * * php ' . _PS_ROOT_DIR_ . '/modules/pagosuscriekp/cron.php</pre>
+            <p><strong>' . $this->l('Alternativa con wget/curl:') . '</strong></p>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">*/5 * * * * wget -q -O - "' . Tools::getShopDomainSsl(true) . __PS_BASE_URI__ . 'modules/pagosuscriekp/cron.php" > /dev/null 2>&1</pre>
+            <p><em>' . $this->l('Nota: Esto ejecutará el cron cada 5 minutos. Ajusta según tus necesidades.') . '</em></p>
+            <h5>' . $this->l('¿Cómo configurar el cron?') . '</h5>
+            <ul>
+                <li>' . $this->l('cPanel: Busca "Cron Jobs" en el panel de control') . '</li>
+                <li>' . $this->l('Plesk: Panel de control > Tareas programadas') . '</li>
+                <li>' . $this->l('SSH: Ejecuta "crontab -e" y añade la línea anterior') . '</li>
+                <li>' . $this->l('Hosting compartido: Contacta con tu proveedor de hosting') . '</li>
+            </ul>
+        </div>';
+
         $fieldsForm = array(
             'form' => array(
                 'legend' => array(
@@ -614,7 +653,7 @@ class PagoSuscriekp extends PaymentModule
             'id_language' => $this->context->language->id,
         );
 
-        return $helper->generateForm(array($fieldsForm));
+        return $warnings . $helper->generateForm(array($fieldsForm)) . $cron_info;
     }
 
     /**
