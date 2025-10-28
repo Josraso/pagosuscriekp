@@ -1428,18 +1428,42 @@ class PagoSuscriekp extends PaymentModule
         $payment_options = array();
 
         foreach ($availablePlans as $plan) {
-            $this->debugLog('Creando opción de pago para plan #' . $plan['id_plan']);
+            try {
+                $this->debugLog('Creando opción de pago para plan #' . $plan['id_plan']);
 
-            $newOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
-            $newOption->setCallToActionText($this->l('Pago por suscripción') . ' - ' . $plan['name'])
-                ->setAction($this->context->link->getModuleLink($this->name, 'validation', array('id_plan' => $plan['id_plan']), true))
-                ->setAdditionalInformation($this->generatePaymentInfo($plan));
+                $newOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
+                $newOption->setCallToActionText($this->l('Pago por suscripción') . ' - ' . $plan['name'])
+                    ->setAction($this->context->link->getModuleLink($this->name, 'validation', array('id_plan' => $plan['id_plan']), true));
 
-            $payment_options[] = $newOption;
+                // Intentar agregar información adicional, pero si falla no importa
+                try {
+                    $additional_info = $this->generatePaymentInfo($plan);
+                    if ($additional_info) {
+                        $newOption->setAdditionalInformation($additional_info);
+                        $this->debugLog('Información adicional agregada correctamente');
+                    }
+                } catch (Exception $e) {
+                    $this->debugLog('AVISO: No se pudo generar info adicional: ' . $e->getMessage());
+                    // Continuar sin info adicional
+                }
+
+                $payment_options[] = $newOption;
+                $this->debugLog('Opción de pago agregada al array correctamente');
+
+            } catch (Exception $e) {
+                $this->debugLog('ERROR al crear opción de pago: ' . $e->getMessage());
+            }
         }
 
-        $this->debugLog('Devolviendo ' . count($payment_options) . ' opciones de pago');
-        return $payment_options;
+        $this->debugLog('Total opciones creadas: ' . count($payment_options));
+        $this->debugLog('Devolviendo opciones de pago');
+
+        if (count($payment_options) > 0) {
+            return $payment_options;
+        }
+
+        $this->debugLog('ERROR: Array de opciones vacío, devolviendo array vacío');
+        return array();
     }
 
     /**
