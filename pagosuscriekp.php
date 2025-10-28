@@ -224,6 +224,10 @@ class PagoSuscriekp extends PaymentModule
     {
         $this->html = '';
 
+        // DEBUG TEMPORAL - Ver qué parámetros llegan
+        $tab_param = Tools::getValue('tab');
+        $this->html .= '<div class="alert alert-info">DEBUG: Parámetro tab recibido: <strong>' . htmlentities($tab_param) . '</strong></div>';
+
         // Procesar formularios
         if (Tools::isSubmit('submitPagoSuscriekpConfig')) {
             $this->postProcessConfig();
@@ -329,7 +333,7 @@ class PagoSuscriekp extends PaymentModule
         foreach ($tabs as $key => $tab) {
             $active_class = ($active_tab == $key) ? ' active' : '';
             $html .= '<li class="' . $active_class . '" role="presentation">
-                        <a href="' . htmlentities($tab['url']) . '">
+                        <a href="' . $tab['url'] . '">
                             <i class="' . $tab['icon'] . '"></i> ' . $tab['name'] . '
                         </a>
                       </li>';
@@ -345,10 +349,30 @@ class PagoSuscriekp extends PaymentModule
      */
     private function postProcessConfig()
     {
-        Configuration::updateValue('PAGOSUSCRIEKP_BANK_OWNER', Tools::getValue('PAGOSUSCRIEKP_BANK_OWNER'));
-        Configuration::updateValue('PAGOSUSCRIEKP_BANK_DETAILS', Tools::getValue('PAGOSUSCRIEKP_BANK_DETAILS'));
+        $bank_owner = Tools::getValue('PAGOSUSCRIEKP_BANK_OWNER');
+        $bank_details = Tools::getValue('PAGOSUSCRIEKP_BANK_DETAILS');
+        $reminder_days = (int)Tools::getValue('PAGOSUSCRIEKP_REMINDER_DAYS');
+
+        // Validar campos obligatorios
+        if (empty($bank_owner)) {
+            $this->html .= $this->displayError($this->l('El titular de la cuenta es obligatorio'));
+            return;
+        }
+
+        if (empty($bank_details)) {
+            $this->html .= $this->displayError($this->l('Los datos bancarios son obligatorios'));
+            return;
+        }
+
+        if ($reminder_days <= 0) {
+            $this->html .= $this->displayError($this->l('Los días de aviso deben ser mayor que 0'));
+            return;
+        }
+
+        Configuration::updateValue('PAGOSUSCRIEKP_BANK_OWNER', $bank_owner);
+        Configuration::updateValue('PAGOSUSCRIEKP_BANK_DETAILS', $bank_details);
         Configuration::updateValue('PAGOSUSCRIEKP_BANK_ADDRESS', Tools::getValue('PAGOSUSCRIEKP_BANK_ADDRESS'));
-        Configuration::updateValue('PAGOSUSCRIEKP_REMINDER_DAYS', (int)Tools::getValue('PAGOSUSCRIEKP_REMINDER_DAYS'));
+        Configuration::updateValue('PAGOSUSCRIEKP_REMINDER_DAYS', $reminder_days);
 
         $this->html .= $this->displayConfirmation($this->l('Configuración actualizada correctamente'));
     }
