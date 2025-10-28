@@ -225,10 +225,6 @@ class PagoSuscriekp extends PaymentModule
     {
         $this->html = '';
 
-        // DEBUG TEMPORAL - Ver qué parámetros llegan
-        $section_param = Tools::getValue('module_section');
-        $this->html .= '<div class="alert alert-info">DEBUG: Parámetro module_section recibido: <strong>' . htmlentities($section_param) . '</strong></div>';
-
         // Procesar formularios
         if (Tools::isSubmit('submitPagoSuscriekpConfig')) {
             $this->postProcessConfig();
