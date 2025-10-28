@@ -1345,31 +1345,40 @@ class PagoSuscriekp extends PaymentModule
 
     public function hookPaymentOptions($params)
     {
+        // Log para debug
+        PrestaShopLogger::addLog('PagoSuscriekp: Hook paymentOptions llamado', 1);
+
         if (!$this->active) {
+            PrestaShopLogger::addLog('PagoSuscriekp: Módulo no activo', 2);
             return;
         }
 
         $cart = $params['cart'];
-        
+
         // Verificar si existe un plan aplicable para los productos del carrito
         $availablePlans = $this->getAvailablePlansForCart($cart);
-        
+
+        PrestaShopLogger::addLog('PagoSuscriekp: Planes encontrados: ' . count($availablePlans), 1);
+
         if (empty($availablePlans)) {
+            PrestaShopLogger::addLog('PagoSuscriekp: No hay planes disponibles para este carrito', 2);
             return;
         }
 
         $payment_options = array();
 
         foreach ($availablePlans as $plan) {
+            PrestaShopLogger::addLog('PagoSuscriekp: Creando opción de pago para plan #' . $plan['id_plan'], 1);
+
             $newOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
             $newOption->setCallToActionText($this->l('Pago por suscripción') . ' - ' . $plan['name'])
                 ->setAction($this->context->link->getModuleLink($this->name, 'validation', array('id_plan' => $plan['id_plan']), true))
-                ->setAdditionalInformation($this->generatePaymentInfo($plan))
-                ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_ . $this->name . '/views/img/payment.png'));
+                ->setAdditionalInformation($this->generatePaymentInfo($plan));
 
             $payment_options[] = $newOption;
         }
 
+        PrestaShopLogger::addLog('PagoSuscriekp: Devolviendo ' . count($payment_options) . ' opciones de pago', 1);
         return $payment_options;
     }
 
