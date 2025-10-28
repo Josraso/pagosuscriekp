@@ -271,7 +271,35 @@ class PagoSuscriekp extends PaymentModule
                 break;
         }
 
+        // Botón para reregistrar hooks (solo para debug)
+        if (Tools::getValue('reregister_hooks')) {
+            $this->reregisterHooks();
+            $this->html .= $this->displayConfirmation($this->l('Hooks reregistrados correctamente'));
+        }
+
         return $this->html;
+    }
+
+    /**
+     * Reregistrar todos los hooks del módulo
+     */
+    private function reregisterHooks()
+    {
+        $hooks = array(
+            'paymentOptions',
+            'paymentReturn',
+            'displayAdminOrder',
+            'displayBackOfficeHeader',
+            'actionCronJob'
+        );
+
+        foreach ($hooks as $hook) {
+            if (!$this->isRegisteredInHook($hook)) {
+                $this->registerHook($hook);
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -564,6 +592,32 @@ class PagoSuscriekp extends PaymentModule
             </div>';
         }
 
+        // Botones de herramientas de debug
+        $token = Tools::getAdminTokenLite('AdminModules');
+        $reregister_url = 'index.php?controller=AdminModules'
+            . '&configure=' . $this->name
+            . '&tab_module=' . $this->tab
+            . '&module_name=' . $this->name
+            . '&token=' . $token
+            . '&module_section=config'
+            . '&reregister_hooks=1';
+
+        $debug_buttons = '<div class="panel">
+            <div class="panel-heading"><i class="icon-wrench"></i> ' . $this->l('Herramientas de Debug') . '</div>
+            <div class="panel-body">
+                <p>' . $this->l('Si el método de pago no aparece en el checkout, usa estas herramientas:') . '</p>
+                <a href="' . $reregister_url . '" class="btn btn-warning">
+                    <i class="icon-refresh"></i> ' . $this->l('Reregistrar Hooks') . '
+                </a>
+                <a href="' . Tools::getShopDomainSsl(true) . __PS_BASE_URI__ . 'modules/pagosuscriekp/debug.php" class="btn btn-info" target="_blank">
+                    <i class="icon-bug"></i> ' . $this->l('Ver Estado del Módulo') . '
+                </a>
+                <a href="' . Tools::getShopDomainSsl(true) . __PS_BASE_URI__ . 'modules/pagosuscriekp/debug.log" class="btn btn-default" target="_blank">
+                    <i class="icon-file-text"></i> ' . $this->l('Ver Logs de Debug') . '
+                </a>
+            </div>
+        </div>';
+
         // Información del Cron
         $cron_info = '<div class="alert alert-info">
             <h4><i class="icon-info"></i> ' . $this->l('Configuración del Cron para recordatorios de pago') . '</h4>
@@ -649,7 +703,7 @@ class PagoSuscriekp extends PaymentModule
             'id_language' => $this->context->language->id,
         );
 
-        return $warnings . $helper->generateForm(array($fieldsForm)) . $cron_info;
+        return $warnings . $debug_buttons . $helper->generateForm(array($fieldsForm)) . $cron_info;
     }
 
     /**
@@ -1345,30 +1399,36 @@ class PagoSuscriekp extends PaymentModule
 
     public function hookPaymentOptions($params)
     {
-        // Log para debug
-        PrestaShopLogger::addLog('PagoSuscriekp: Hook paymentOptions llamado', 1);
+        // Sistema de logs propio para debug
+        $this->debugLog('Hook paymentOptions llamado');
 
         if (!$this->active) {
-            PrestaShopLogger::addLog('PagoSuscriekp: Módulo no activo', 2);
+            $this->debugLog('ERROR: Módulo no activo');
             return;
         }
 
         $cart = $params['cart'];
+        $this->debugLog('Cart ID: ' . $cart->id);
 
         // Verificar si existe un plan aplicable para los productos del carrito
         $availablePlans = $this->getAvailablePlansForCart($cart);
 
-        PrestaShopLogger::addLog('PagoSuscriekp: Planes encontrados: ' . count($availablePlans), 1);
+        $this->debugLog('Planes encontrados: ' . count($availablePlans));
+        if (!empty($availablePlans)) {
+            foreach ($availablePlans as $p) {
+                $this->debugLog('Plan: #' . $p['id_plan'] . ' - ' . $p['name'] . ' - Activo: ' . $p['active']);
+            }
+        }
 
         if (empty($availablePlans)) {
-            PrestaShopLogger::addLog('PagoSuscriekp: No hay planes disponibles para este carrito', 2);
+            $this->debugLog('ERROR: No hay planes disponibles para este carrito');
             return;
         }
 
         $payment_options = array();
 
         foreach ($availablePlans as $plan) {
-            PrestaShopLogger::addLog('PagoSuscriekp: Creando opción de pago para plan #' . $plan['id_plan'], 1);
+            $this->debugLog('Creando opción de pago para plan #' . $plan['id_plan']);
 
             $newOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
             $newOption->setCallToActionText($this->l('Pago por suscripción') . ' - ' . $plan['name'])
@@ -1378,8 +1438,19 @@ class PagoSuscriekp extends PaymentModule
             $payment_options[] = $newOption;
         }
 
-        PrestaShopLogger::addLog('PagoSuscriekp: Devolviendo ' . count($payment_options) . ' opciones de pago', 1);
+        $this->debugLog('Devolviendo ' . count($payment_options) . ' opciones de pago');
         return $payment_options;
+    }
+
+    /**
+     * Sistema de logs propio para debug
+     */
+    private function debugLog($message)
+    {
+        $log_file = dirname(__FILE__) . '/debug.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $log_message = "[$timestamp] $message\n";
+        file_put_contents($log_file, $log_message, FILE_APPEND);
     }
 
     private function getAvailablePlansForCart($cart)
@@ -1440,23 +1511,30 @@ class PagoSuscriekp extends PaymentModule
 
     public function hookPaymentReturn($params)
     {
+        $this->debugLog('Hook paymentReturn llamado');
+
         if (!$this->active) {
+            $this->debugLog('ERROR paymentReturn: Módulo no activo');
             return;
         }
 
         $order = $params['order'];
+        $this->debugLog('paymentReturn Order ID: ' . $order->id);
 
         if ($order->getCurrentState() != Configuration::get('PAGOSUSCRIEKP_ORDER_STATE')) {
+            $this->debugLog('paymentReturn: Estado del pedido no coincide');
             return;
         }
 
         $subscription = Subscription::getByOrderId($order->id);
-        
+
         if (!$subscription) {
+            $this->debugLog('ERROR paymentReturn: No se encontró suscripción');
             return;
         }
 
         $payments = $subscription->getPayments();
+        $this->debugLog('paymentReturn: ' . count($payments) . ' pagos encontrados');
 
         $this->context->smarty->assign(array(
             'subscription' => $subscription,
