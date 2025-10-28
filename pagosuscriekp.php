@@ -225,8 +225,8 @@ class PagoSuscriekp extends PaymentModule
         $this->html = '';
 
         // DEBUG TEMPORAL - Ver qué parámetros llegan
-        $tab_param = Tools::getValue('tab');
-        $this->html .= '<div class="alert alert-info">DEBUG: Parámetro tab recibido: <strong>' . htmlentities($tab_param) . '</strong></div>';
+        $section_param = Tools::getValue('module_section');
+        $this->html .= '<div class="alert alert-info">DEBUG: Parámetro module_section recibido: <strong>' . htmlentities($section_param) . '</strong></div>';
 
         // Procesar formularios
         if (Tools::isSubmit('submitPagoSuscriekpConfig')) {
@@ -255,7 +255,7 @@ class PagoSuscriekp extends PaymentModule
         }
 
         // Determinar pestaña activa
-        $active_tab = Tools::getValue('tab', 'config');
+        $active_tab = Tools::getValue('module_section', 'config');
 
         // Renderizar pestañas
         $this->html .= $this->renderTabs($active_tab);
@@ -314,17 +314,17 @@ class PagoSuscriekp extends PaymentModule
             'config' => array(
                 'name' => $this->l('Configuración'),
                 'icon' => 'icon-cogs',
-                'url' => $base_url . '&tab=config'
+                'url' => $base_url . '&module_section=config'
             ),
             'planes' => array(
                 'name' => $this->l('Planes de Suscripción'),
                 'icon' => 'icon-list-alt',
-                'url' => $base_url . '&tab=planes'
+                'url' => $base_url . '&module_section=planes'
             ),
             'suscripciones' => array(
                 'name' => $this->l('Suscripciones'),
                 'icon' => 'icon-users',
-                'url' => $base_url . '&tab=suscripciones'
+                'url' => $base_url . '&module_section=suscripciones'
             ),
         );
 
@@ -447,7 +447,7 @@ class PagoSuscriekp extends PaymentModule
             . '&tab_module=' . $this->tab
             . '&module_name=' . $this->name
             . '&token=' . $token
-            . '&tab=planes';
+            . '&module_section=planes';
         Tools::redirectAdmin($redirect_url);
     }
 
@@ -635,7 +635,7 @@ class PagoSuscriekp extends PaymentModule
                 <i class="icon-list-alt"></i> ' . $this->l('Planes de Suscripción') . '
                 <span class="badge">' . count($plans) . '</span>
                 <span class="panel-heading-action">
-                    <a class="btn btn-primary" href="' . $base_url . '&tab=planes&addplan=1">
+                    <a class="btn btn-primary" href="' . $base_url . '&module_section=planes&addplan=1">
                         <i class="icon-plus"></i> ' . $this->l('Añadir plan') . '
                     </a>
                 </span>
@@ -689,10 +689,10 @@ class PagoSuscriekp extends PaymentModule
                     <td><strong>' . Tools::displayPrice($total) . '</strong></td>
                     <td>' . ($plan['active'] ? '<span class="badge badge-success">' . $this->l('Activo') . '</span>' : '<span class="badge badge-danger">' . $this->l('Inactivo') . '</span>') . '</td>
                     <td>
-                        <a class="btn btn-default btn-sm" href="' . $base_url . '&tab=planes&editplan=1&id_plan=' . $plan['id_plan'] . '">
+                        <a class="btn btn-default btn-sm" href="' . $base_url . '&module_section=planes&editplan=1&id_plan=' . $plan['id_plan'] . '">
                             <i class="icon-edit"></i> ' . $this->l('Editar') . '
                         </a>
-                        <a class="btn btn-danger btn-sm" href="' . $base_url . '&tab=planes&deleteplan=1&id_plan=' . $plan['id_plan'] . '" onclick="return confirm(\'' . $this->l('¿Eliminar este plan?') . '\')">
+                        <a class="btn btn-danger btn-sm" href="' . $base_url . '&module_section=planes&deleteplan=1&id_plan=' . $plan['id_plan'] . '" onclick="return confirm(\'' . $this->l('¿Eliminar este plan?') . '\')">
                             <i class="icon-trash"></i>
                         </a>
                     </td>
@@ -783,7 +783,7 @@ class PagoSuscriekp extends PaymentModule
                         </div>
                     </td>
                     <td>
-                        <a class="btn btn-default btn-sm" href="' . $base_url . '&tab=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '">
+                        <a class="btn btn-default btn-sm" href="' . $base_url . '&module_section=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '">
                             <i class="icon-eye"></i> ' . $this->l('Ver') . '
                         </a>
                     </td>
@@ -842,7 +842,7 @@ class PagoSuscriekp extends PaymentModule
             <div class="panel-heading">
                 <i class="icon-cogs"></i> ' . ($editing ? $this->l('Editar plan de suscripción') : $this->l('Crear nuevo plan de suscripción')) . '
             </div>
-            <form action="' . $base_url . '&tab=planes" method="post" class="form-horizontal" id="planForm">
+            <form action="' . $base_url . '&module_section=planes" method="post" class="form-horizontal" id="planForm">
                 <input type="hidden" name="submitPlan" value="1">
                 ' . ($editing ? '<input type="hidden" name="id_plan" value="' . $id_plan . '">' : '') . '
 
@@ -964,7 +964,7 @@ class PagoSuscriekp extends PaymentModule
                 </div>
 
                 <div class="panel-footer">
-                    <a href="' . $base_url . '&tab=planes" class="btn btn-default">
+                    <a href="' . $base_url . '&module_section=planes" class="btn btn-default">
                         <i class="process-icon-cancel"></i> ' . $this->l('Cancelar') . '
                     </a>
                     <button type="submit" name="submitPlan" class="btn btn-default pull-right">
@@ -1157,7 +1157,7 @@ class PagoSuscriekp extends PaymentModule
                         <div class="btn-group">';
 
         if ($subscription->status == 'active' && !$is_fully_paid) {
-            $html .= '<a href="' . $base_url . '&tab=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&markAllPaid=1"
+            $html .= '<a href="' . $base_url . '&module_section=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&markAllPaid=1"
                            class="btn btn-success"
                            onclick="return confirm(\'' . $this->l('¿Marcar todos los pagos como pagados?') . '\');">
                             <i class="icon-check"></i> ' . $this->l('Marcar todo como pagado') . '
@@ -1165,13 +1165,13 @@ class PagoSuscriekp extends PaymentModule
         }
 
         if ($subscription->status == 'active') {
-            $html .= '<a href="' . $base_url . '&tab=suscripciones&cancelSubscription=1&id_subscription=' . $subscription->id . '"
+            $html .= '<a href="' . $base_url . '&module_section=suscripciones&cancelSubscription=1&id_subscription=' . $subscription->id . '"
                            class="btn btn-warning"
                            onclick="return confirm(\'' . $this->l('¿Cancelar esta suscripción?') . '\');">
                             <i class="icon-times"></i> ' . $this->l('Cancelar suscripción') . '
                         </a>';
         } else {
-            $html .= '<a href="' . $base_url . '&tab=suscripciones&reactivateSubscription=1&id_subscription=' . $subscription->id . '"
+            $html .= '<a href="' . $base_url . '&module_section=suscripciones&reactivateSubscription=1&id_subscription=' . $subscription->id . '"
                            class="btn btn-success"
                            onclick="return confirm(\'' . $this->l('¿Reactivar esta suscripción?') . '\');">
                             <i class="icon-check"></i> ' . $this->l('Reactivar suscripción') . '
@@ -1230,13 +1230,13 @@ class PagoSuscriekp extends PaymentModule
                     <td class="text-center">';
 
                 if (!$payment['paid']) {
-                    $html .= '<a href="' . $base_url . '&tab=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&markPaid=1&id_payment=' . $payment['id_payment'] . '"
+                    $html .= '<a href="' . $base_url . '&module_section=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&markPaid=1&id_payment=' . $payment['id_payment'] . '"
                                class="btn btn-success btn-xs"
                                onclick="return confirm(\'' . $this->l('¿Marcar este pago como pagado?') . '\');">
                                 <i class="icon-check"></i> ' . $this->l('Marcar pagado') . '
                             </a>';
                 } else {
-                    $html .= '<a href="' . $base_url . '&tab=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&markUnpaid=1&id_payment=' . $payment['id_payment'] . '"
+                    $html .= '<a href="' . $base_url . '&module_section=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&markUnpaid=1&id_payment=' . $payment['id_payment'] . '"
                                class="btn btn-warning btn-xs"
                                onclick="return confirm(\'' . $this->l('¿Desmarcar este pago?') . '\');">
                                 <i class="icon-undo"></i> ' . $this->l('Desmarcar') . '
@@ -1257,7 +1257,7 @@ class PagoSuscriekp extends PaymentModule
 
         $html .= '    </div>
             <div class="panel-footer">
-                <a href="' . $base_url . '&tab=suscripciones" class="btn btn-default">
+                <a href="' . $base_url . '&module_section=suscripciones" class="btn btn-default">
                     <i class="icon-arrow-left"></i> ' . $this->l('Volver al listado') . '
                 </a>
             </div>
