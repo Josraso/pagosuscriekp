@@ -297,11 +297,14 @@ class PagoSuscriekp extends PaymentModule
      */
     private function renderTabs($active_tab)
     {
-        $base_url = $this->context->link->getAdminLink('AdminModules', false)
+        $token = Tools::getAdminTokenLite('AdminModules');
+
+        // Construir URL base correctamente
+        $base_url = 'index.php?controller=AdminModules'
             . '&configure=' . $this->name
             . '&tab_module=' . $this->tab
             . '&module_name=' . $this->name
-            . '&token=' . Tools::getAdminTokenLite('AdminModules');
+            . '&token=' . $token;
 
         $tabs = array(
             'config' => array(
@@ -326,7 +329,7 @@ class PagoSuscriekp extends PaymentModule
         foreach ($tabs as $key => $tab) {
             $active_class = ($active_tab == $key) ? ' active' : '';
             $html .= '<li class="' . $active_class . '" role="presentation">
-                        <a href="' . $tab['url'] . '">
+                        <a href="' . htmlentities($tab['url']) . '">
                             <i class="' . $tab['icon'] . '"></i> ' . $tab['name'] . '
                         </a>
                       </li>';
@@ -414,7 +417,14 @@ class PagoSuscriekp extends PaymentModule
         $this->html .= $this->displayConfirmation($this->l('Plan guardado correctamente'));
 
         // Redirigir a la pestaña de planes
-        Tools::redirectAdmin($this->context->link->getAdminLink('AdminModules', true) . '&configure=' . $this->name . '&tab=planes');
+        $token = Tools::getAdminTokenLite('AdminModules');
+        $redirect_url = 'index.php?controller=AdminModules'
+            . '&configure=' . $this->name
+            . '&tab_module=' . $this->tab
+            . '&module_name=' . $this->name
+            . '&token=' . $token
+            . '&tab=planes';
+        Tools::redirectAdmin($redirect_url);
     }
 
     /**
@@ -589,11 +599,12 @@ class PagoSuscriekp extends PaymentModule
     private function renderPlanesTab()
     {
         $plans = $this->getPlans();
-        $base_url = $this->context->link->getAdminLink('AdminModules', false)
+        $token = Tools::getAdminTokenLite('AdminModules');
+        $base_url = 'index.php?controller=AdminModules'
             . '&configure=' . $this->name
             . '&tab_module=' . $this->tab
             . '&module_name=' . $this->name
-            . '&token=' . Tools::getAdminTokenLite('AdminModules');
+            . '&token=' . $token;
 
         $html = '<div class="panel">
             <div class="panel-heading">
@@ -681,11 +692,12 @@ class PagoSuscriekp extends PaymentModule
     private function renderSuscripcionesTab()
     {
         $subscriptions = Subscription::getAll();
-        $base_url = $this->context->link->getAdminLink('AdminModules', false)
+        $token = Tools::getAdminTokenLite('AdminModules');
+        $base_url = 'index.php?controller=AdminModules'
             . '&configure=' . $this->name
             . '&tab_module=' . $this->tab
             . '&module_name=' . $this->name
-            . '&token=' . Tools::getAdminTokenLite('AdminModules');
+            . '&token=' . $token;
 
         $html = '<div class="panel">
             <div class="panel-heading">
@@ -772,11 +784,12 @@ class PagoSuscriekp extends PaymentModule
     {
         $id_plan = (int)Tools::getValue('id_plan');
         $editing = ($id_plan > 0);
-        $base_url = $this->context->link->getAdminLink('AdminModules', false)
+        $token = Tools::getAdminTokenLite('AdminModules');
+        $base_url = 'index.php?controller=AdminModules'
             . '&configure=' . $this->name
             . '&tab_module=' . $this->tab
             . '&module_name=' . $this->name
-            . '&token=' . Tools::getAdminTokenLite('AdminModules');
+            . '&token=' . $token;
 
         $plan_data = array();
         $installments = array();
@@ -1041,11 +1054,12 @@ class PagoSuscriekp extends PaymentModule
     {
         $id_subscription = (int)Tools::getValue('id_subscription');
         $subscription = new Subscription($id_subscription);
-        $base_url = $this->context->link->getAdminLink('AdminModules', false)
+        $token = Tools::getAdminTokenLite('AdminModules');
+        $base_url = 'index.php?controller=AdminModules'
             . '&configure=' . $this->name
             . '&tab_module=' . $this->tab
             . '&module_name=' . $this->name
-            . '&token=' . Tools::getAdminTokenLite('AdminModules');
+            . '&token=' . $token;
 
         if (!Validate::isLoadedObject($subscription)) {
             return $this->displayError($this->l('Suscripción no encontrada'));
