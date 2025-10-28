@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>Confirmación de suscripción</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #3498db;
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .content h2 {
+            color: #333333;
+            font-size: 20px;
+            margin-top: 0;
+        }
+        .content p {
+            color: #555555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-box p {
+            margin: 5px 0;
+        }
+        .payments-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .payments-table th {
+            background-color: #34495e;
+            color: #ffffff;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .payments-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dddddd;
+        }
+        .payments-table tr:last-child td {
+            border-bottom: none;
+        }
+        .payments-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .bank-details {
+            background-color: #fffbea;
+            border: 2px solid #f39c12;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .bank-details h3 {
+            color: #f39c12;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .bank-details p {
+            margin: 8px 0;
+            color: #333333;
+        }
+        .important-notice {
+            background-color: #fff5f5;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .important-notice strong {
+            color: #e74c3c;
+        }
+        .footer {
+            background-color: #34495e;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #ffffff;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #27ae60;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            .content {
+                padding: 20px 15px !important;
+            }
+            .payments-table th,
+            .payments-table td {
+                padding: 8px !important;
+                font-size: 12px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        
+        <!-- Header -->
+        <div class="header">
+            <h1>✓ Suscripción Confirmada</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h2>Hola {firstname} {lastname},</h2>
+            
+            <p>Gracias por tu pedido. Tu suscripción ha sido registrada correctamente.</p>
+
+            <div class="info-box">
+                <p><strong>Referencia del pedido:</strong> {order_reference}</p>
+                <p><strong>Total de la suscripción:</strong> {order_total}</p>
+            </div>
+
+            <h2>📅 Plan de pagos</h2>
+            <p>Tu pago se ha fraccionado según el siguiente calendario:</p>
+
+            <table class="payments-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Cuota</th>
+                        <th>Importe</th>
+                        <th>Vencimiento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {payments_list}
+                </tbody>
+            </table>
+
+            <div class="bank-details">
+                <h3>💳 Datos bancarios para realizar los pagos</h3>
+                <p><strong>Titular de la cuenta:</strong><br>{bank_owner}</p>
+                <p><strong>Datos bancarios:</strong><br>{bank_details}</p>
+                {if isset($bank_address) && $bank_address}
+                    <p><strong>Dirección:</strong><br>{bank_address}</p>
+                {/if}
+            </div>
+
+            <div class="important-notice">
+                <p><strong>⚠️ Importante:</strong></p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Por favor, realiza cada pago en la fecha indicada.</li>
+                    <li>Recibirás un recordatorio por email unos días antes de cada vencimiento.</li>
+                    <li>En el concepto de la transferencia indica el número de pedido: <strong>{order_reference}</strong></li>
+                    <li>Una vez realizado el pago, nos pondremos en contacto contigo para confirmar su recepción.</li>
+                </ul>
+            </div>
+
+            <p>Si tienes alguna duda o consulta sobre tu suscripción, no dudes en contactarnos.</p>
+
+            <p style="margin-top: 30px;">
+                <strong>Gracias por tu confianza,</strong><br>
+                El equipo de atención al cliente
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+            <p>&copy; {date('Y')} Todos los derechos reservados</p>
+        </div>
+
+    </div>
+</body>
+</html>

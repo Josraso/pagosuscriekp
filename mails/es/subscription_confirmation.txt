@@ -1,0 +1,49 @@
+Hola {firstname} {lastname},
+
+Gracias por tu pedido. Tu suscripción ha sido registrada correctamente.
+
+INFORMACIÓN DEL PEDIDO
+----------------------
+Referencia del pedido: {order_reference}
+Total de la suscripción: {order_total}
+
+
+PLAN DE PAGOS
+-------------
+Tu pago se ha fraccionado según el siguiente calendario:
+
+{payments_list}
+
+Total: {order_total}
+
+
+DATOS BANCARIOS PARA REALIZAR LOS PAGOS
+----------------------------------------
+Titular de la cuenta:
+{bank_owner}
+
+Datos bancarios:
+{bank_details}
+
+{if isset($bank_address) && $bank_address}
+Dirección:
+{bank_address}
+{/if}
+
+
+IMPORTANTE
+----------
+- Por favor, realiza cada pago en la fecha indicada.
+- Recibirás un recordatorio por email unos días antes de cada vencimiento.
+- En el concepto de la transferencia indica el número de pedido: {order_reference}
+- Una vez realizado el pago, nos pondremos en contacto contigo para confirmar su recepción.
+
+
+Si tienes alguna duda o consulta sobre tu suscripción, no dudes en contactarnos.
+
+Gracias por tu confianza,
+El equipo de atención al cliente
+
+---
+Este es un correo automático, por favor no respondas a este mensaje.
+© {date('Y')} Todos los derechos reservados

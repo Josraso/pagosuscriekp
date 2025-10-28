@@ -1,0 +1,39 @@
+Hola {firstname} {lastname},
+
+Te recordamos que tienes un pago pendiente próximo a vencer.
+
+
+DETALLES DEL PAGO
+-----------------
+Importe a pagar: {amount}
+Fecha de vencimiento: {due_date}
+
+Referencia del pedido: {order_reference}
+(Por favor, indica esta referencia en el concepto de tu transferencia)
+
+
+DATOS BANCARIOS PARA REALIZAR EL PAGO
+--------------------------------------
+Titular de la cuenta:
+{bank_owner}
+
+Datos bancarios:
+{bank_details}
+
+
+RECUERDA
+--------
+- Realiza el pago antes de la fecha de vencimiento.
+- Indica el número de pedido {order_reference} en el concepto.
+- Una vez realizado el pago, lo confirmaremos en breve.
+
+
+Si ya has realizado el pago, puedes ignorar este mensaje. 
+Si tienes alguna duda, no dudes en contactarnos.
+
+Gracias por tu confianza,
+El equipo de atención al cliente
+
+---
+Este es un correo automático, por favor no respondas a este mensaje.
+© {date('Y')} Todos los derechos reservados
