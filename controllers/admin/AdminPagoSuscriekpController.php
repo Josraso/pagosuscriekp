@@ -137,13 +137,25 @@ class AdminPagoSuscriekpController extends ModuleAdminController
 
     public function displayOrderLink($id_order)
     {
-        return '<a href="' . $this->context->link->getAdminLink('AdminOrders') . '&id_order=' . (int)$id_order . '&vieworder" target="_blank">#' . (int)$id_order . '</a>';
+        // PrestaShop 8+ usa orderId en lugar de id_order
+        if (version_compare(_PS_VERSION_, '8.0.0', '>=')) {
+            $link = $this->context->link->getAdminLink('AdminOrders', true, [], ['orderId' => (int)$id_order, 'vieworder' => 1]);
+        } else {
+            $link = $this->context->link->getAdminLink('AdminOrders') . '&id_order=' . (int)$id_order . '&vieworder';
+        }
+        return '<a href="' . $link . '" target="_blank">#' . (int)$id_order . '</a>';
     }
 
     public function displayCustomerName($customer_name, $row)
     {
         $customer = new Customer($row['id_customer']);
-        return '<a href="' . $this->context->link->getAdminLink('AdminCustomers') . '&id_customer=' . (int)$customer->id . '&viewcustomer" target="_blank">' . $customer_name . '</a>';
+        // PrestaShop 8+ usa customerId en lugar de id_customer
+        if (version_compare(_PS_VERSION_, '8.0.0', '>=')) {
+            $link = $this->context->link->getAdminLink('AdminCustomers', true, [], ['customerId' => (int)$customer->id, 'viewcustomer' => 1]);
+        } else {
+            $link = $this->context->link->getAdminLink('AdminCustomers') . '&id_customer=' . (int)$customer->id . '&viewcustomer';
+        }
+        return '<a href="' . $link . '" target="_blank">' . $customer_name . '</a>';
     }
 
     public function displayProductName($product_name, $row)
@@ -217,6 +229,15 @@ class AdminPagoSuscriekpController extends ModuleAdminController
             }
         }
 
+        // Generar enlaces compatibles con PS 8
+        if (version_compare(_PS_VERSION_, '8.0.0', '>=')) {
+            $customer_link = $this->context->link->getAdminLink('AdminCustomers', true, [], ['customerId' => (int)$customer->id, 'viewcustomer' => 1]);
+            $order_link = $this->context->link->getAdminLink('AdminOrders', true, [], ['orderId' => (int)$order->id, 'vieworder' => 1]);
+        } else {
+            $customer_link = $this->context->link->getAdminLink('AdminCustomers') . '&id_customer=' . (int)$customer->id . '&viewcustomer';
+            $order_link = $this->context->link->getAdminLink('AdminOrders') . '&id_order=' . (int)$order->id . '&vieworder';
+        }
+
         // Preparar datos para la vista
         $this->context->smarty->assign(array(
             'subscription' => $subscription,
@@ -229,7 +250,9 @@ class AdminPagoSuscriekpController extends ModuleAdminController
             'is_fully_paid' => $subscription->isFullyPaid(),
             'current_index' => self::$currentIndex,
             'token' => $this->token,
-            'link' => $this->context->link
+            'link' => $this->context->link,
+            'customer_link' => $customer_link,
+            'order_link' => $order_link
         ));
 
         return $this->context->smarty->fetch(_PS_MODULE_DIR_ . 'pagosuscriekp/views/templates/admin/subscription_view.tpl');

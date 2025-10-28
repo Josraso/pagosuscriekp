@@ -22,17 +22,17 @@
                 <dl class="well list-detail">
                     <dt>{l s='Cliente:' mod='pagosuscriekp'}</dt>
                     <dd>
-                        <a href="{$link->getAdminLink('AdminCustomers')|escape:'html':'UTF-8'}&id_customer={$customer->id|intval}&viewcustomer" target="_blank">
+                        <a href="{$customer_link|escape:'html':'UTF-8'}" target="_blank">
                             {$customer->firstname|escape:'html':'UTF-8'} {$customer->lastname|escape:'html':'UTF-8'}
                         </a>
                     </dd>
-                    
+
                     <dt>{l s='Email:' mod='pagosuscriekp'}</dt>
                     <dd>{$customer->email|escape:'html':'UTF-8'}</dd>
-                    
+
                     <dt>{l s='Pedido:' mod='pagosuscriekp'}</dt>
                     <dd>
-                        <a href="{$link->getAdminLink('AdminOrders')|escape:'html':'UTF-8'}&id_order={$order->id|intval}&vieworder" target="_blank">
+                        <a href="{$order_link|escape:'html':'UTF-8'}" target="_blank">
                             {$order->reference|escape:'html':'UTF-8'}
                         </a>
                     </dd>

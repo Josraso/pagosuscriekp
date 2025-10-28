@@ -26,7 +26,7 @@
                                 <strong>{l s='Pago' mod='pagosuscriekp'} {$installment.installment_number}</strong>
                             </td>
                             <td class="text-center">
-                                <span class="price">{displayPrice price=$installment.amount}</span>
+                                <span class="price">{$installment.amount_formatted nofilter}</span>
                             </td>
                             <td class="text-center">
                                 {if $installment.days_after_purchase == 0}
@@ -42,13 +42,7 @@
                     <tr class="total-row">
                         <td colspan="2" class="text-right"><strong>{l s='Total:' mod='pagosuscriekp'}</strong></td>
                         <td class="text-center">
-                            <strong class="price">
-                                {assign var="total" value=0}
-                                {foreach from=$installments item=installment}
-                                    {assign var="total" value=$total+$installment.amount}
-                                {/foreach}
-                                {displayPrice price=$total}
-                            </strong>
+                            <strong class="price">{$total_formatted nofilter}</strong>
                         </td>
                     </tr>
                 </tfoot>

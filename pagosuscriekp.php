@@ -47,6 +47,7 @@ class PagoSuscriekp extends PaymentModule
             || !$this->registerHook('displayAdminOrder')
             || !$this->registerHook('displayBackOfficeHeader')
             || !$this->registerHook('actionCronJob')
+            || !$this->registerHook('displayCustomerAccount')
         ) {
             return false;
         }
@@ -290,13 +291,15 @@ class PagoSuscriekp extends PaymentModule
             'paymentReturn',
             'displayAdminOrder',
             'displayBackOfficeHeader',
-            'actionCronJob'
+            'actionCronJob',
+            'displayCustomerAccount'
         );
 
         foreach ($hooks as $hook) {
-            if (!$this->isRegisteredInHook($hook)) {
-                $this->registerHook($hook);
-            }
+            // Primero desregistramos para evitar duplicados
+            $this->unregisterHook($hook);
+            // Luego volvemos a registrar
+            $this->registerHook($hook);
         }
 
         return true;
@@ -318,6 +321,32 @@ class PagoSuscriekp extends PaymentModule
         } else {
             // Solo fecha: 25/01/2025
             return date('d/m/Y', $timestamp);
+        }
+    }
+
+    /**
+     * Helper para generar enlace a pedido compatible con PS 1.7 y 8
+     */
+    private function getOrderAdminLink($id_order)
+    {
+        // PrestaShop 8+ usa orderId en lugar de id_order
+        if (version_compare(_PS_VERSION_, '8.0.0', '>=')) {
+            return $this->context->link->getAdminLink('AdminOrders', true, [], ['orderId' => (int)$id_order, 'vieworder' => 1]);
+        } else {
+            return $this->context->link->getAdminLink('AdminOrders') . '&id_order=' . (int)$id_order . '&vieworder';
+        }
+    }
+
+    /**
+     * Helper para generar enlace a cliente compatible con PS 1.7 y 8
+     */
+    private function getCustomerAdminLink($id_customer)
+    {
+        // PrestaShop 8+ usa customerId en lugar de id_customer
+        if (version_compare(_PS_VERSION_, '8.0.0', '>=')) {
+            return $this->context->link->getAdminLink('AdminCustomers', true, [], ['customerId' => (int)$id_customer, 'viewcustomer' => 1]);
+        } else {
+            return $this->context->link->getAdminLink('AdminCustomers') . '&id_customer=' . (int)$id_customer . '&viewcustomer';
         }
     }
 
@@ -861,7 +890,7 @@ class PagoSuscriekp extends PaymentModule
                 $html .= '<tr>
                     <td>' . $subscription->id . '</td>
                     <td>' . htmlentities($customer->firstname . ' ' . $customer->lastname) . '</td>
-                    <td><a href="' . $this->context->link->getAdminLink('AdminOrders') . '&id_order=' . $subscription->id_order . '&vieworder" target="_blank">#' . $subscription->id_order . '</a></td>
+                    <td><a href="' . $this->getOrderAdminLink($subscription->id_order) . '" target="_blank">#' . $subscription->id_order . '</a></td>
                     <td>' . $product_name . '</td>
                     <td>' . $this->formatDateES($subscription->date_add, false) . '</td>
                     <td>' . $status_badge . '</td>
@@ -1165,7 +1194,11 @@ class PagoSuscriekp extends PaymentModule
      */
     private function renderSubscriptionView()
     {
+        // Intentar obtener el ID de suscripción de ambos parámetros posibles
         $id_subscription = (int)Tools::getValue('id_subscription');
+        if (!$id_subscription) {
+            $id_subscription = (int)Tools::getValue('viewsubscription');
+        }
         $subscription = new Subscription($id_subscription);
         $token = Tools::getAdminTokenLite('AdminModules');
         $base_url = 'index.php?controller=AdminModules'
@@ -1203,13 +1236,13 @@ class PagoSuscriekp extends PaymentModule
                         <h4>' . $this->l('Información del cliente') . '</h4>
                         <dl class="well list-detail">
                             <dt>' . $this->l('Cliente:') . '</dt>
-                            <dd><a href="' . $this->context->link->getAdminLink('AdminCustomers') . '&id_customer=' . $customer->id . '&viewcustomer" target="_blank">' . htmlentities($customer->firstname . ' ' . $customer->lastname) . '</a></dd>
+                            <dd><a href="' . $this->getCustomerAdminLink($customer->id) . '" target="_blank">' . htmlentities($customer->firstname . ' ' . $customer->lastname) . '</a></dd>
 
                             <dt>' . $this->l('Email:') . '</dt>
                             <dd>' . htmlentities($customer->email) . '</dd>
 
                             <dt>' . $this->l('Pedido:') . '</dt>
-                            <dd><a href="' . $this->context->link->getAdminLink('AdminOrders') . '&id_order=' . $order->id . '&vieworder" target="_blank">' . $order->reference . '</a></dd>
+                            <dd><a href="' . $this->getOrderAdminLink($order->id) . '" target="_blank">' . $order->reference . '</a></dd>
 
                             <dt>' . $this->l('Fecha de creación:') . '</dt>
                             <dd>' . $this->formatDateES($subscription->date_add, true) . '</dd>
@@ -1521,10 +1554,18 @@ class PagoSuscriekp extends PaymentModule
     private function generatePaymentInfo($plan)
     {
         $installments = $this->getPlanInstallments($plan['id_plan']);
-        
+
+        // Formatear precios de las cuotas
+        $total = 0;
+        foreach ($installments as &$installment) {
+            $installment['amount_formatted'] = Tools::displayPrice($installment['amount']);
+            $total += $installment['amount'];
+        }
+
         $this->context->smarty->assign(array(
             'plan' => $plan,
             'installments' => $installments,
+            'total_formatted' => Tools::displayPrice($total),
             'bank_owner' => Configuration::get('PAGOSUSCRIEKP_BANK_OWNER'),
             'bank_details' => nl2br(Configuration::get('PAGOSUSCRIEKP_BANK_DETAILS')),
             'bank_address' => nl2br(Configuration::get('PAGOSUSCRIEKP_BANK_ADDRESS')),
@@ -1659,6 +1700,14 @@ class PagoSuscriekp extends PaymentModule
         if (Tools::getValue('ajax') && Tools::getValue('action') == 'getCombinations') {
             $this->ajaxGetCombinations();
         }
+    }
+
+    /**
+     * Hook para mostrar enlace en la cuenta del cliente
+     */
+    public function hookDisplayCustomerAccount($params)
+    {
+        return $this->context->smarty->fetch('module:pagosuscriekp/views/templates/front/my-account-link.tpl');
     }
 
     /**
