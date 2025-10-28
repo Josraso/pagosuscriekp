@@ -224,16 +224,24 @@ class Subscription extends ObjectModel
     public function updateOrderPaymentStatus()
     {
         $order = new Order($this->id_order);
-        
+
         if (!Validate::isLoadedObject($order)) {
             return false;
         }
 
-        // Si está completamente pagado, cambiar el estado
+        // Si está completamente pagado, cambiar el estado a "Pago completado"
         if ($this->isFullyPaid()) {
-            // Estado "Pago aceptado" o similar
-            $id_order_state = (int)Configuration::get('PS_OS_PAYMENT');
-            $order->setCurrentState($id_order_state);
+            $id_completed_state = (int)Configuration::get('PAGOSUSCRIEKP_COMPLETED_STATE');
+
+            // Si no existe el estado personalizado, usar el estado por defecto de PrestaShop
+            if (!$id_completed_state) {
+                $id_completed_state = (int)Configuration::get('PS_OS_PAYMENT');
+            }
+
+            // Solo cambiar si el estado actual no es ya "Pago completado"
+            if ($order->getCurrentState() != $id_completed_state) {
+                $order->setCurrentState($id_completed_state);
+            }
         }
 
         return true;
