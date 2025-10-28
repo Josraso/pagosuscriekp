@@ -20,19 +20,32 @@
 
             {foreach from=$subscriptions item=sub}
                 <div class="card subscription-card" style="margin-bottom: 20px;">
-                    <div class="card-header" style="background: #f5f5f5; padding: 15px;">
+                    <div class="card-header" style="background: #f5f5f5; padding: 15px; cursor: {if $sub.is_fully_paid}pointer{else}default{/if};"
+                         {if $sub.is_fully_paid}onclick="toggleSubscription({$sub.subscription->id|intval})"{/if}>
                         <div class="row">
                             <div class="col-md-6">
                                 <h3 style="margin: 0; font-size: 18px;">
                                     <i class="material-icons" style="vertical-align: middle;">&#xE8B8;</i>
                                     {l s='Suscripción' mod='pagosuscriekp'} #{$sub.subscription->id|intval}
+                                    {if $sub.is_fully_paid}
+                                        <i class="material-icons toggle-icon" id="toggle-icon-{$sub.subscription->id|intval}" style="vertical-align: middle; font-size: 20px; transition: transform 0.3s;">&#xE5C5;</i>
+                                    {/if}
                                 </h3>
                                 <p style="margin: 5px 0 0 0; color: #666;">
                                     {l s='Pedido:' mod='pagosuscriekp'} {$sub.order_reference|escape:'html':'UTF-8'}
+                                    {if $sub.is_fully_paid}
+                                        <span style="margin-left: 10px; color: #17a2b8; font-size: 12px;">
+                                            ({l s='Haz clic para ver detalles' mod='pagosuscriekp'})
+                                        </span>
+                                    {/if}
                                 </p>
                             </div>
                             <div class="col-md-6 text-right">
-                                {if $sub.subscription->status == 'active'}
+                                {if $sub.is_fully_paid}
+                                    <span class="badge badge-info" style="background: #17a2b8; color: white; padding: 8px 12px; border-radius: 4px;">
+                                        ✓ {l s='Suscripción pagada' mod='pagosuscriekp'}
+                                    </span>
+                                {elseif $sub.subscription->status == 'active'}
                                     <span class="badge badge-success" style="background: #28a745; color: white; padding: 8px 12px; border-radius: 4px;">
                                         {l s='Activa' mod='pagosuscriekp'}
                                     </span>
@@ -45,7 +58,8 @@
                         </div>
                     </div>
 
-                    <div class="card-body" style="padding: 20px;">
+                    <div class="card-body" id="subscription-body-{$sub.subscription->id|intval}"
+                         style="padding: 20px; {if $sub.is_fully_paid}display: none;{/if}">
 
                         {* Información general *}
                         <div class="row" style="margin-bottom: 20px;">
@@ -153,6 +167,21 @@
             </p>
 
         {/if}
+
+        <script>
+        function toggleSubscription(id) {
+            var body = document.getElementById('subscription-body-' + id);
+            var icon = document.getElementById('toggle-icon-' + id);
+
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                body.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        </script>
 
     </div>
 {/block}

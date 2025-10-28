@@ -86,6 +86,10 @@ class PagoSuscriekpValidationModuleFrontController extends ModuleFrontController
             $this->redirectWithNotifications('index.php?controller=order&step=1');
         }
 
+        // IMPORTANTE: Eliminar el pago automático que crea PrestaShop
+        // Solo queremos crear ps_order_payment cuando se marquen las cuotas individuales como pagadas
+        Db::getInstance()->delete('order_payment', 'id_order = ' . (int)$id_order);
+
         // Crear la suscripción
         $subscription = new Subscription();
         $subscription->id_order = $id_order;
@@ -133,12 +137,25 @@ class PagoSuscriekpValidationModuleFrontController extends ModuleFrontController
     private function sendSubscriptionConfirmationEmail($subscription, $customer, $order)
     {
         $payments = $subscription->getPayments();
-        
-        // Preparar la lista de pagos para el email
-        $payments_list = '';
+
+        // Preparar la lista de pagos para email TXT (texto plano)
+        $payments_list_txt = '';
         foreach ($payments as $payment) {
-            $payments_list .= '- ' . Tools::displayPrice($payment['amount']) . ' - Vencimiento: ' . Tools::displayDate($payment['due_date']) . "\n";
+            $payments_list_txt .= '- ' . Tools::displayPrice($payment['amount']) . ' - Vencimiento: ' . date('d/m/Y', strtotime($payment['due_date'])) . "\n";
         }
+
+        // Preparar la lista de pagos para email HTML
+        $payments_list_html = '';
+        foreach ($payments as $payment) {
+            $payments_list_html .= '<tr>';
+            $payments_list_html .= '<td style="padding: 12px; border-bottom: 1px solid #dddddd;">Pago ' . $payment['installment_number'] . '</td>';
+            $payments_list_html .= '<td style="padding: 12px; border-bottom: 1px solid #dddddd;"><strong>' . Tools::displayPrice($payment['amount']) . '</strong></td>';
+            $payments_list_html .= '<td style="padding: 12px; border-bottom: 1px solid #dddddd;">' . date('d/m/Y', strtotime($payment['due_date'])) . '</td>';
+            $payments_list_html .= '</tr>';
+        }
+
+        $bank_details_clean = Configuration::get('PAGOSUSCRIEKP_BANK_DETAILS');
+        $bank_address_clean = Configuration::get('PAGOSUSCRIEKP_BANK_ADDRESS');
 
         $templateVars = array(
             '{firstname}' => $customer->firstname,
@@ -146,10 +163,11 @@ class PagoSuscriekpValidationModuleFrontController extends ModuleFrontController
             '{email}' => $customer->email,
             '{order_reference}' => $order->reference,
             '{order_total}' => Tools::displayPrice($subscription->getTotalAmount()),
-            '{payments_list}' => $payments_list,
+            '{payments_list}' => $payments_list_txt,
+            '{payments_list_html}' => $payments_list_html,
             '{bank_owner}' => Configuration::get('PAGOSUSCRIEKP_BANK_OWNER'),
-            '{bank_details}' => Configuration::get('PAGOSUSCRIEKP_BANK_DETAILS'),
-            '{bank_address}' => Configuration::get('PAGOSUSCRIEKP_BANK_ADDRESS'),
+            '{bank_details}' => nl2br($bank_details_clean ? $bank_details_clean : 'No configurado'),
+            '{bank_address}' => nl2br($bank_address_clean ? $bank_address_clean : ''),
         );
 
         return Mail::Send(

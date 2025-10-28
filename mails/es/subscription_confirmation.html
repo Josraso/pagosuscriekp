@@ -166,7 +166,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {payments_list}
+                    {payments_list_html}
                 </tbody>
             </table>
 
@@ -174,9 +174,7 @@
                 <h3>💳 Datos bancarios para realizar los pagos</h3>
                 <p><strong>Titular de la cuenta:</strong><br>{bank_owner}</p>
                 <p><strong>Datos bancarios:</strong><br>{bank_details}</p>
-                {if isset($bank_address) && $bank_address}
-                    <p><strong>Dirección:</strong><br>{bank_address}</p>
-                {/if}
+                <p><strong>Dirección:</strong><br>{bank_address}</p>
             </div>
 
             <div class="important-notice">
