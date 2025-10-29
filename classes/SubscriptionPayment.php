@@ -30,9 +30,9 @@ class SubscriptionPayment extends ObjectModel
             'amount' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
             'due_date' => array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true),
             'paid' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
-            'date_paid' => array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => false),
+            'date_paid' => array('type' => self::TYPE_STRING, 'validate' => 'isDateFormat', 'required' => false),
             'id_order_payment' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => false),
-            'last_reminder_sent' => array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => false),
+            'last_reminder_sent' => array('type' => self::TYPE_STRING, 'validate' => 'isDateFormat', 'required' => false),
             'date_add' => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
         ),
     );
