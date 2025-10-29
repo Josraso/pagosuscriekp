@@ -93,6 +93,12 @@ class PagoSuscriekpValidationModuleFrontController extends ModuleFrontController
             Db::getInstance()->delete('order_payment', 'order_reference = \'' . pSQL($order->reference) . '\'');
         }
 
+        // Generar factura inmediatamente
+        // Esto permite que la factura exista desde el principio y se vayan registrando los pagos parciales
+        if (Validate::isLoadedObject($order) && !$order->hasInvoice()) {
+            $order->setInvoice(true);
+        }
+
         // Crear la suscripción
         $subscription = new Subscription();
         $subscription->id_order = $id_order;
