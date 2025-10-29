@@ -65,7 +65,7 @@ class PagoSuscriekp extends PaymentModule
 
     private function updateDatabase()
     {
-        // Verificar y agregar columna installment_number si no existe
+        // Verificar y agregar columnas a pagosuscriekp_payment si no existen
         $columns = Db::getInstance()->executeS('SHOW COLUMNS FROM `' . _DB_PREFIX_ . 'pagosuscriekp_payment`');
         $has_installment_number = false;
         $has_last_reminder_sent = false;
@@ -90,6 +90,34 @@ class PagoSuscriekp extends PaymentModule
             Db::getInstance()->execute('
                 ALTER TABLE `' . _DB_PREFIX_ . 'pagosuscriekp_payment`
                 ADD `last_reminder_sent` datetime DEFAULT NULL AFTER `id_order_payment`
+            ');
+        }
+
+        // Verificar y agregar columnas a pagosuscriekp_plan_installment para fechas fijas
+        $installment_columns = Db::getInstance()->executeS('SHOW COLUMNS FROM `' . _DB_PREFIX_ . 'pagosuscriekp_plan_installment`');
+        $has_date_type = false;
+        $has_fixed_date_day = false;
+
+        foreach ($installment_columns as $column) {
+            if ($column['Field'] == 'date_type') {
+                $has_date_type = true;
+            }
+            if ($column['Field'] == 'fixed_date_day') {
+                $has_fixed_date_day = true;
+            }
+        }
+
+        if (!$has_date_type) {
+            Db::getInstance()->execute('
+                ALTER TABLE `' . _DB_PREFIX_ . 'pagosuscriekp_plan_installment`
+                ADD `date_type` varchar(10) NOT NULL DEFAULT "days" AFTER `days_after_purchase`
+            ');
+        }
+
+        if (!$has_fixed_date_day) {
+            Db::getInstance()->execute('
+                ALTER TABLE `' . _DB_PREFIX_ . 'pagosuscriekp_plan_installment`
+                ADD `fixed_date_day` int(11) DEFAULT NULL AFTER `date_type`
             ');
         }
 
@@ -1056,7 +1084,7 @@ class PagoSuscriekp extends PaymentModule
                     <div class="form-group">
                         <label class="control-label col-lg-3">' . $this->l('Producto específico') . '</label>
                         <div class="col-lg-9">
-                            <select name="id_product" id="id_product" class="form-control">
+                            <select name="id_product" id="id_product" class="form-control product-selector">
                                 <option value="0">' . $this->l('-- Plan genérico (todos los productos) --') . '</option>';
 
         foreach ($products as $product) {
@@ -1255,6 +1283,15 @@ class PagoSuscriekp extends PaymentModule
 
             updateInstallmentNumbers();
             calculatePlanTotal();
+
+            // Inicializar Select2 en el selector de productos para búsqueda
+            if (typeof $.fn.select2 !== "undefined") {
+                $(".product-selector").select2({
+                    placeholder: "' . $this->l('Buscar producto...') . '",
+                    allowClear: true,
+                    width: "100%"
+                });
+            }
 
             if ($("#id_product").val() > 0) {
                 $("#id_product").trigger("change");
