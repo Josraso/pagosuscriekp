@@ -239,30 +239,9 @@ class Subscription extends ObjectModel
             return false;
         }
 
-        // Si está completamente pagado
+        // Si está completamente pagado, solo cambiamos el estado
+        // PrestaShop se encargará automáticamente de crear el pago y la factura
         if ($this->isFullyPaid()) {
-            // 1. Crear ps_order_payment con el total completo (solo si no existe ya)
-            $existing_payment = Db::getInstance()->getValue('
-                SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'order_payment`
-                WHERE order_reference = \'' . pSQL($order->reference) . '\'
-            ');
-
-            if (!$existing_payment) {
-                $order_payment = new OrderPayment();
-                $order_payment->order_reference = $order->reference;
-                $order_payment->id_currency = $order->id_currency;
-                $order_payment->amount = $this->getTotalAmount();
-                $order_payment->payment_method = 'Pago por suscripción completado';
-                $order_payment->conversion_rate = 1;
-                $order_payment->date_add = date('Y-m-d H:i:s');
-                $order_payment->add();
-
-                // Actualizar total pagado del pedido
-                $order->total_paid_real = $this->getTotalAmount();
-                $order->update();
-            }
-
-            // 2. Cambiar estado a "Pago completado" (esto generará la factura)
             $id_completed_state = (int)Configuration::get('PAGOSUSCRIEKP_COMPLETED_STATE');
 
             // Si no existe el estado personalizado, usar el estado por defecto de PrestaShop
@@ -272,6 +251,7 @@ class Subscription extends ObjectModel
 
             // Solo cambiar si el estado actual no es ya "Pago completado"
             if ($order->getCurrentState() != $id_completed_state) {
+                // PrestaShop creará automáticamente el ps_order_payment al cambiar el estado
                 $order->setCurrentState($id_completed_state);
             }
         }
