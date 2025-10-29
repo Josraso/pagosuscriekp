@@ -18,6 +18,7 @@ class SubscriptionPayment extends ObjectModel
     public $paid;
     public $date_paid;
     public $id_order_payment;
+    public $last_reminder_sent;
     public $date_add;
 
     public static $definition = array(
@@ -31,6 +32,7 @@ class SubscriptionPayment extends ObjectModel
             'paid' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
             'date_paid' => array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => false),
             'id_order_payment' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => false),
+            'last_reminder_sent' => array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => false),
             'date_add' => array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
         ),
     );
@@ -220,5 +222,61 @@ class SubscriptionPayment extends ObjectModel
                 FROM `' . _DB_PREFIX_ . 'pagosuscriekp_payment`';
         
         return Db::getInstance()->getRow($sql);
+    }
+
+    /**
+     * Enviar recordatorio de pago
+     */
+    public function sendReminder()
+    {
+        if ($this->paid) {
+            return false; // No enviar recordatorio si ya está pagado
+        }
+
+        $subscription = new Subscription($this->id_subscription);
+        $customer = new Customer($subscription->id_customer);
+        $order = new Order($subscription->id_order);
+
+        if (!Validate::isLoadedObject($customer) || !Validate::isLoadedObject($order)) {
+            return false;
+        }
+
+        // Preparar variables para el correo
+        $templateVars = array(
+            '{firstname}' => $customer->firstname,
+            '{lastname}' => $customer->lastname,
+            '{order_reference}' => $order->reference,
+            '{installment_number}' => $this->installment_number,
+            '{amount}' => Tools::displayPrice($this->amount),
+            '{due_date}' => date('d/m/Y', strtotime($this->due_date)),
+            '{bank_owner}' => Configuration::get('PAGOSUSCRIEKP_BANK_OWNER'),
+            '{bank_details}' => nl2br(Configuration::get('PAGOSUSCRIEKP_BANK_DETAILS')),
+            '{bank_address}' => nl2br(Configuration::get('PAGOSUSCRIEKP_BANK_ADDRESS')),
+        );
+
+        // Enviar correo
+        $result = Mail::Send(
+            (int)$order->id_lang,
+            'payment_reminder',
+            'Recordatorio de pago - Cuota ' . $this->installment_number,
+            $templateVars,
+            $customer->email,
+            $customer->firstname . ' ' . $customer->lastname,
+            null,
+            null,
+            null,
+            null,
+            dirname(__FILE__) . '/../mails/',
+            false,
+            (int)$order->id_shop
+        );
+
+        if ($result) {
+            // Actualizar fecha de último recordatorio enviado
+            $this->last_reminder_sent = date('Y-m-d H:i:s');
+            $this->update();
+        }
+
+        return $result;
     }
 }

@@ -68,11 +68,14 @@ class PagoSuscriekp extends PaymentModule
         // Verificar y agregar columna installment_number si no existe
         $columns = Db::getInstance()->executeS('SHOW COLUMNS FROM `' . _DB_PREFIX_ . 'pagosuscriekp_payment`');
         $has_installment_number = false;
+        $has_last_reminder_sent = false;
 
         foreach ($columns as $column) {
             if ($column['Field'] == 'installment_number') {
                 $has_installment_number = true;
-                break;
+            }
+            if ($column['Field'] == 'last_reminder_sent') {
+                $has_last_reminder_sent = true;
             }
         }
 
@@ -80,6 +83,13 @@ class PagoSuscriekp extends PaymentModule
             Db::getInstance()->execute('
                 ALTER TABLE `' . _DB_PREFIX_ . 'pagosuscriekp_payment`
                 ADD `installment_number` int(11) NOT NULL DEFAULT 1 AFTER `id_subscription`
+            ');
+        }
+
+        if (!$has_last_reminder_sent) {
+            Db::getInstance()->execute('
+                ALTER TABLE `' . _DB_PREFIX_ . 'pagosuscriekp_payment`
+                ADD `last_reminder_sent` datetime DEFAULT NULL AFTER `id_order_payment`
             ');
         }
 
@@ -282,6 +292,8 @@ class PagoSuscriekp extends PaymentModule
             $this->postProcessReactivateSubscription();
         } elseif (Tools::isSubmit('markAllPaid')) {
             $this->postProcessMarkAllPaid();
+        } elseif (Tools::isSubmit('sendReminder')) {
+            $this->postProcessSendReminder();
         }
 
         // Mostrar vistas según acción
@@ -587,6 +599,31 @@ class PagoSuscriekp extends PaymentModule
             $this->html .= $this->displayConfirmation($this->l('Pago desmarcado correctamente'));
         } else {
             $this->html .= $this->displayError($this->l('Error al desmarcar el pago'));
+        }
+    }
+
+    /**
+     * Procesar envío de recordatorio de pago
+     */
+    private function postProcessSendReminder()
+    {
+        $id_payment = (int)Tools::getValue('id_payment');
+        $payment = new SubscriptionPayment($id_payment);
+
+        if (!Validate::isLoadedObject($payment)) {
+            $this->html .= $this->displayError($this->l('Pago no encontrado'));
+            return;
+        }
+
+        if ($payment->paid) {
+            $this->html .= $this->displayWarning($this->l('Este pago ya está marcado como pagado'));
+            return;
+        }
+
+        if ($payment->sendReminder()) {
+            $this->html .= $this->displayConfirmation($this->l('Recordatorio enviado correctamente'));
+        } else {
+            $this->html .= $this->displayError($this->l('Error al enviar el recordatorio'));
         }
     }
 
@@ -1357,7 +1394,8 @@ class PagoSuscriekp extends PaymentModule
                                 <th>' . $this->l('Fecha vencimiento') . '</th>
                                 <th class="text-center">' . $this->l('Estado') . '</th>
                                 <th>' . $this->l('Fecha de pago') . '</th>
-                                <th class="text-center" style="width: 150px;">' . $this->l('Acciones') . '</th>
+                                <th>' . $this->l('Último recordatorio') . '</th>
+                                <th class="text-center" style="width: 200px;">' . $this->l('Acciones') . '</th>
                             </tr>
                         </thead>
                         <tbody>';
@@ -1388,6 +1426,7 @@ class PagoSuscriekp extends PaymentModule
 
                 $html .= '</td>
                     <td>' . ($payment['date_paid'] ? $this->formatDateES($payment['date_paid'], true) : '<span class="text-muted">-</span>') . '</td>
+                    <td>' . ($payment['last_reminder_sent'] ? $this->formatDateES($payment['last_reminder_sent'], true) : '<span class="text-muted">-</span>') . '</td>
                     <td class="text-center">';
 
                 if (!$payment['paid']) {
@@ -1395,6 +1434,11 @@ class PagoSuscriekp extends PaymentModule
                                class="btn btn-success btn-xs"
                                onclick="return confirm(\'' . $this->l('¿Marcar este pago como pagado?') . '\');">
                                 <i class="icon-check"></i> ' . $this->l('Marcar pagado') . '
+                            </a> ';
+                    $html .= '<a href="' . $base_url . '&module_section=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&sendReminder=1&id_payment=' . $payment['id_payment'] . '"
+                               class="btn btn-info btn-xs"
+                               onclick="return confirm(\'' . $this->l('¿Enviar recordatorio al cliente?') . '\');">
+                                <i class="icon-envelope"></i> ' . $this->l('Enviar recordatorio') . '
                             </a>';
                 } else {
                     $html .= '<a href="' . $base_url . '&module_section=suscripciones&viewsubscription=1&id_subscription=' . $subscription->id . '&markUnpaid=1&id_payment=' . $payment['id_payment'] . '"
@@ -1683,17 +1727,18 @@ class PagoSuscriekp extends PaymentModule
         $target_date = date('Y-m-d', strtotime('+' . $reminder_days . ' days'));
 
         // Obtener pagos pendientes que vencen en la fecha objetivo
-        $sql = 'SELECT p.*, s.id_customer, s.id_order 
+        $sql = 'SELECT id_payment
                 FROM `' . _DB_PREFIX_ . 'pagosuscriekp_payment` p
                 INNER JOIN `' . _DB_PREFIX_ . 'pagosuscriekp_subscription` s ON (p.id_subscription = s.id_subscription)
-                WHERE p.paid = 0 
+                WHERE p.paid = 0
                 AND p.due_date = "' . pSQL($target_date) . '"
                 AND s.status = "active"';
 
         $payments = Db::getInstance()->executeS($sql);
 
         foreach ($payments as $payment_data) {
-            $this->sendReminderEmail($payment_data);
+            $payment = new SubscriptionPayment($payment_data['id_payment']);
+            $payment->sendReminder(); // Usa el nuevo método que guarda la fecha automáticamente
         }
 
         return true;
