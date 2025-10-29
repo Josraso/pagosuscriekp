@@ -112,16 +112,26 @@ class Subscription extends ObjectModel
             return false;
         }
 
+        // Para calcular fechas de forma acumulativa
+        $previous_due_date = $order_date;
+
         foreach ($installments as $installment) {
             $payment = new SubscriptionPayment();
             $payment->id_subscription = $this->id;
+            $payment->installment_number = $installment['installment_number'];
             $payment->amount = $installment['amount'];
-            
-            // Calcular fecha de vencimiento
-            $due_date = date('Y-m-d', strtotime($order_date . ' +' . $installment['days_after_purchase'] . ' days'));
+
+            // Calcular fecha de vencimiento ACUMULATIVA
+            // Si la primera cuota es en 0 días, se paga inmediatamente
+            // Si la segunda cuota es en 30 días, es 30 días DESPUÉS de la primera
+            // Si la tercera cuota es en 30 días, es 30 días DESPUÉS de la segunda
+            $due_date = date('Y-m-d', strtotime($previous_due_date . ' +' . $installment['days_after_purchase'] . ' days'));
             $payment->due_date = $due_date;
             $payment->paid = 0;
-            
+
+            // Actualizar la fecha anterior para la próxima iteración
+            $previous_due_date = $due_date;
+
             if (!$payment->add()) {
                 return false;
             }

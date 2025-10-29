@@ -35,6 +35,11 @@ class PagoSuscriekp extends PaymentModule
         $this->displayName = $this->l('Pago por Suscripción');
         $this->description = $this->l('Permite a los clientes pagar mediante suscripción/fraccionamiento de pagos');
         $this->confirmUninstall = $this->l('¿Estás seguro de desinstalar este módulo?');
+
+        // Actualizar BD cuando se instancia el módulo (para agregar nuevas columnas)
+        if ($this->active) {
+            $this->updateDatabase();
+        }
     }
 
     public function install()
@@ -52,11 +57,45 @@ class PagoSuscriekp extends PaymentModule
             return false;
         }
 
-        // Crear valores de configuración por defecto
-        Configuration::updateValue('PAGOSUSCRIEKP_BANK_OWNER', '');
-        Configuration::updateValue('PAGOSUSCRIEKP_BANK_DETAILS', '');
-        Configuration::updateValue('PAGOSUSCRIEKP_BANK_ADDRESS', '');
-        Configuration::updateValue('PAGOSUSCRIEKP_REMINDER_DAYS', 3);
+        // Actualizar BD si es necesario
+        $this->updateDatabase();
+
+        return true;
+    }
+
+    private function updateDatabase()
+    {
+        // Verificar y agregar columna installment_number si no existe
+        $columns = Db::getInstance()->executeS('SHOW COLUMNS FROM `' . _DB_PREFIX_ . 'pagosuscriekp_payment`');
+        $has_installment_number = false;
+
+        foreach ($columns as $column) {
+            if ($column['Field'] == 'installment_number') {
+                $has_installment_number = true;
+                break;
+            }
+        }
+
+        if (!$has_installment_number) {
+            Db::getInstance()->execute('
+                ALTER TABLE `' . _DB_PREFIX_ . 'pagosuscriekp_payment`
+                ADD `installment_number` int(11) NOT NULL DEFAULT 1 AFTER `id_subscription`
+            ');
+        }
+
+        // Crear valores de configuración por defecto si no existen
+        if (!Configuration::get('PAGOSUSCRIEKP_BANK_OWNER')) {
+            Configuration::updateValue('PAGOSUSCRIEKP_BANK_OWNER', '');
+        }
+        if (!Configuration::get('PAGOSUSCRIEKP_BANK_DETAILS')) {
+            Configuration::updateValue('PAGOSUSCRIEKP_BANK_DETAILS', '');
+        }
+        if (!Configuration::get('PAGOSUSCRIEKP_BANK_ADDRESS')) {
+            Configuration::updateValue('PAGOSUSCRIEKP_BANK_ADDRESS', '');
+        }
+        if (!Configuration::get('PAGOSUSCRIEKP_REMINDER_DAYS')) {
+            Configuration::updateValue('PAGOSUSCRIEKP_REMINDER_DAYS', 3);
+        }
 
         return true;
     }

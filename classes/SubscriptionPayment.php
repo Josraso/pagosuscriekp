@@ -12,6 +12,7 @@ class SubscriptionPayment extends ObjectModel
 {
     public $id_payment;
     public $id_subscription;
+    public $installment_number;
     public $amount;
     public $due_date;
     public $paid;
@@ -24,6 +25,7 @@ class SubscriptionPayment extends ObjectModel
         'primary' => 'id_payment',
         'fields' => array(
             'id_subscription' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+            'installment_number' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
             'amount' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
             'due_date' => array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true),
             'paid' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
