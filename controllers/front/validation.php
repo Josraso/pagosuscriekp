@@ -88,7 +88,10 @@ class PagoSuscriekpValidationModuleFrontController extends ModuleFrontController
 
         // IMPORTANTE: Eliminar el pago automático que crea PrestaShop
         // Solo queremos crear ps_order_payment cuando se marquen las cuotas individuales como pagadas
-        Db::getInstance()->delete('order_payment', 'id_order = ' . (int)$id_order);
+        $order = new Order($id_order);
+        if (Validate::isLoadedObject($order) && $order->reference) {
+            Db::getInstance()->delete('order_payment', 'order_reference = \'' . pSQL($order->reference) . '\'');
+        }
 
         // Crear la suscripción
         $subscription = new Subscription();
