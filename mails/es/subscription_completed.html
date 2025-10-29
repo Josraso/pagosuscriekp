@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>Suscripción completada</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .content h2 {
+            color: #333333;
+            font-size: 20px;
+            margin-top: 0;
+        }
+        .content p {
+            color: #555555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .celebration-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .celebration-box .icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+        .celebration-box h3 {
+            margin: 10px 0;
+            font-size: 24px;
+            color: #ffffff;
+        }
+        .celebration-box p {
+            color: #ffffff;
+            font-size: 16px;
+        }
+        .payment-summary {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .payment-summary h3 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .payment-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 18px;
+            color: #27ae60;
+        }
+        .order-info {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .order-info p {
+            margin: 5px 0;
+        }
+        .success-notice {
+            background-color: #e8f8f5;
+            border-left: 4px solid #27ae60;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #34495e;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #ffffff;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            .content {
+                padding: 20px 15px !important;
+            }
+            .celebration-box {
+                padding: 20px 15px !important;
+            }
+            .celebration-box .icon {
+                font-size: 48px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+
+        <!-- Header -->
+        <div class="header">
+            <h1>🎉 ¡Suscripción Completada!</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h2>¡Enhorabuena {firstname} {lastname}!</h2>
+
+            <p>Nos complace informarte que has completado exitosamente todos los pagos de tu suscripción.</p>
+
+            <div class="celebration-box">
+                <div class="icon">🎊</div>
+                <h3>¡Todos los pagos completados!</h3>
+                <p>Has cumplido con todas tus cuotas de manera exitosa</p>
+            </div>
+
+            <div class="payment-summary">
+                <h3>📊 Resumen de pagos</h3>
+                <div class="payment-row">
+                    <span>Total de cuotas:</span>
+                    <span><strong>{total_count}</strong></span>
+                </div>
+                <div class="payment-row">
+                    <span>Total pagado:</span>
+                    <span><strong style="color: #27ae60;">{total_amount}</strong></span>
+                </div>
+            </div>
+
+            <div class="order-info">
+                <p><strong>📦 Referencia del pedido:</strong> {order_reference}</p>
+                <p><strong>📅 Fecha de inicio:</strong> {subscription_start_date}</p>
+                <p><strong>📅 Fecha de finalización:</strong> {completion_date}</p>
+            </div>
+
+            <div class="success-notice">
+                <p><strong>✅ Tu pedido está completamente pagado</strong></p>
+                <p>Ya no tienes pagos pendientes para esta suscripción. Tu pedido ha sido marcado como totalmente pagado en nuestro sistema.</p>
+            </div>
+
+            <p>Muchas gracias por tu puntualidad y compromiso con los pagos. Ha sido un placer poder ofrecerte esta facilidad de pago fraccionado.</p>
+
+            <p style="margin-top: 30px;">
+                <strong>¡Gracias por confiar en nosotros!,</strong><br>
+                El equipo de atención al cliente
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+            <p>&copy; {date('Y')} Todos los derechos reservados</p>
+        </div>
+
+    </div>
+</body>
+</html>

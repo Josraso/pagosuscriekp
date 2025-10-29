@@ -54,6 +54,9 @@ class SubscriptionPayment extends ObjectModel
         // Solo se creará cuando se completen TODAS las cuotas
 
         if ($this->update()) {
+            // Enviar email de confirmación de pago
+            $this->sendPaymentConfirmationEmail();
+
             // Verificar si la suscripción está completamente pagada
             $subscription = new Subscription($this->id_subscription);
             $subscription->updateOrderPaymentStatus();
@@ -276,6 +279,69 @@ class SubscriptionPayment extends ObjectModel
             $this->last_reminder_sent = date('Y-m-d H:i:s');
             $this->update();
         }
+
+        return $result;
+    }
+
+    /**
+     * Enviar email de confirmación de pago
+     */
+    private function sendPaymentConfirmationEmail()
+    {
+        $subscription = new Subscription($this->id_subscription);
+        $customer = new Customer($subscription->id_customer);
+        $order = new Order($subscription->id_order);
+
+        if (!Validate::isLoadedObject($customer) || !Validate::isLoadedObject($order)) {
+            return false;
+        }
+
+        // Obtener datos de la suscripción para el email
+        $payments = $subscription->getPayments();
+        $paid_count = 0;
+        $total_count = count($payments);
+        $next_payment_date = null;
+
+        foreach ($payments as $payment) {
+            if ($payment['paid']) {
+                $paid_count++;
+            } elseif (!$next_payment_date && !$payment['paid']) {
+                $next_payment_date = date('d/m/Y', strtotime($payment['due_date']));
+            }
+        }
+
+        $pending_amount = $subscription->getPendingAmount();
+
+        // Preparar variables para el correo
+        $templateVars = array(
+            '{firstname}' => $customer->firstname,
+            '{lastname}' => $customer->lastname,
+            '{order_reference}' => $order->reference,
+            '{installment_number}' => $this->installment_number,
+            '{amount}' => Tools::displayPrice($this->amount),
+            '{date_paid}' => date('d/m/Y H:i', strtotime($this->date_paid)),
+            '{paid_count}' => $paid_count,
+            '{total_count}' => $total_count,
+            '{pending_amount}' => Tools::displayPrice($pending_amount),
+            '{next_payment_date}' => $next_payment_date ? $next_payment_date : '',
+        );
+
+        // Enviar correo
+        $result = Mail::Send(
+            (int)$order->id_lang,
+            'payment_paid',
+            'Pago confirmado - Cuota ' . $this->installment_number,
+            $templateVars,
+            $customer->email,
+            $customer->firstname . ' ' . $customer->lastname,
+            null,
+            null,
+            null,
+            null,
+            dirname(__FILE__) . '/../mails/',
+            false,
+            (int)$order->id_shop
+        );
 
         return $result;
     }

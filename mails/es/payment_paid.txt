@@ -1,0 +1,34 @@
+✅ PAGO CONFIRMADO
+
+Hola {firstname} {lastname},
+
+¡Excelente noticia! Hemos recibido y confirmado tu pago de la cuota {installment_number}.
+
+─────────────────────────────────
+DETALLES DEL PAGO
+─────────────────────────────────
+
+Importe pagado: {amount}
+Cuota número: #{installment_number}
+Referencia del pedido: {order_reference}
+Fecha de pago: {date_paid}
+
+─────────────────────────────────
+ESTADO DE TU SUSCRIPCIÓN
+─────────────────────────────────
+
+Cuotas pagadas: {paid_count} de {total_count}
+Importe pendiente: {pending_amount}
+
+{if $next_payment_date}
+📅 Próximo pago: {next_payment_date}
+Te enviaremos un recordatorio antes de la fecha de vencimiento.
+{else}
+🎉 ¡Has completado todos los pagos de esta suscripción!
+{/if}
+
+Gracias por tu pago,
+El equipo de atención al cliente
+
+---
+Este es un correo automático, por favor no respondas a este mensaje.

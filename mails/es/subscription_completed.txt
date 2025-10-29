@@ -1,0 +1,37 @@
+🎉 ¡SUSCRIPCIÓN COMPLETADA!
+
+¡Enhorabuena {firstname} {lastname}!
+
+Nos complace informarte que has completado exitosamente todos los pagos de tu suscripción.
+
+═════════════════════════════════
+    ¡TODOS LOS PAGOS COMPLETADOS!
+    Has cumplido con todas tus cuotas
+═════════════════════════════════
+
+─────────────────────────────────
+RESUMEN DE PAGOS
+─────────────────────────────────
+
+Total de cuotas: {total_count}
+Total pagado: {total_amount}
+
+─────────────────────────────────
+DETALLES DEL PEDIDO
+─────────────────────────────────
+
+Referencia del pedido: {order_reference}
+Fecha de inicio: {subscription_start_date}
+Fecha de finalización: {completion_date}
+
+✅ TU PEDIDO ESTÁ COMPLETAMENTE PAGADO
+
+Ya no tienes pagos pendientes para esta suscripción. Tu pedido ha sido marcado como totalmente pagado en nuestro sistema.
+
+Muchas gracias por tu puntualidad y compromiso con los pagos. Ha sido un placer poder ofrecerte esta facilidad de pago fraccionado.
+
+¡Gracias por confiar en nosotros!,
+El equipo de atención al cliente
+
+---
+Este es un correo automático, por favor no respondas a este mensaje.

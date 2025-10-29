@@ -253,6 +253,9 @@ class Subscription extends ObjectModel
             if ($order->getCurrentState() != $id_completed_state) {
                 // PrestaShop creará automáticamente el ps_order_payment al cambiar el estado
                 $order->setCurrentState($id_completed_state);
+
+                // Enviar email de suscripción completada
+                $this->sendCompletionEmail();
             }
         }
 
@@ -306,10 +309,58 @@ class Subscription extends ObjectModel
      */
     public function getPaidPaymentsCount()
     {
-        $sql = 'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'pagosuscriekp_payment` 
+        $sql = 'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'pagosuscriekp_payment`
                 WHERE id_subscription = ' . (int)$this->id . '
                 AND paid = 1';
-        
+
         return (int)Db::getInstance()->getValue($sql);
+    }
+
+    /**
+     * Enviar email de suscripción completada
+     */
+    private function sendCompletionEmail()
+    {
+        $customer = new Customer($this->id_customer);
+        $order = new Order($this->id_order);
+
+        if (!Validate::isLoadedObject($customer) || !Validate::isLoadedObject($order)) {
+            return false;
+        }
+
+        // Obtener datos de la suscripción
+        $payments = $this->getPayments();
+        $total_count = count($payments);
+        $total_amount = $this->getTotalAmount();
+
+        // Preparar variables para el correo
+        $templateVars = array(
+            '{firstname}' => $customer->firstname,
+            '{lastname}' => $customer->lastname,
+            '{order_reference}' => $order->reference,
+            '{total_count}' => $total_count,
+            '{total_amount}' => Tools::displayPrice($total_amount),
+            '{subscription_start_date}' => date('d/m/Y', strtotime($this->date_add)),
+            '{completion_date}' => date('d/m/Y H:i'),
+        );
+
+        // Enviar correo
+        $result = Mail::Send(
+            (int)$order->id_lang,
+            'subscription_completed',
+            'Suscripción completada - Todos los pagos realizados',
+            $templateVars,
+            $customer->email,
+            $customer->firstname . ' ' . $customer->lastname,
+            null,
+            null,
+            null,
+            null,
+            dirname(__FILE__) . '/../mails/',
+            false,
+            (int)$order->id_shop
+        );
+
+        return $result;
     }
 }
