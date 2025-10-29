@@ -48,15 +48,14 @@ class SubscriptionPayment extends ObjectModel
         $this->paid = 1;
         $this->date_paid = date('Y-m-d H:i:s');
 
-        if ($create_order_payment) {
-            $this->createOrderPayment();
-        }
+        // NO creamos ps_order_payment por cada cuota
+        // Solo se creará cuando se completen TODAS las cuotas
 
         if ($this->update()) {
             // Verificar si la suscripción está completamente pagada
             $subscription = new Subscription($this->id_subscription);
             $subscription->updateOrderPaymentStatus();
-            
+
             return true;
         }
 
@@ -102,26 +101,21 @@ class SubscriptionPayment extends ObjectModel
      */
     public function markAsUnpaid()
     {
-        // Si existe un pago en el pedido, eliminarlo
-        if ($this->id_order_payment) {
-            $order_payment = new OrderPayment($this->id_order_payment);
-            if (Validate::isLoadedObject($order_payment)) {
-                $subscription = new Subscription($this->id_subscription);
-                $order = new Order($subscription->id_order);
-                
-                // Restar del total pagado
-                $order->total_paid_real -= $this->amount;
-                $order->update();
-                
-                $order_payment->delete();
-            }
-        }
+        // Ya no gestionamos ps_order_payment por cuotas individuales
+        // Solo marcamos como no pagado en nuestra tabla
 
         $this->paid = 0;
         $this->date_paid = null;
         $this->id_order_payment = null;
 
-        return $this->update();
+        if ($this->update()) {
+            // Verificar si hay que cambiar el estado del pedido
+            $subscription = new Subscription($this->id_subscription);
+            $subscription->updateOrderPaymentStatus();
+            return true;
+        }
+
+        return false;
     }
 
     /**

@@ -86,18 +86,8 @@ class PagoSuscriekpValidationModuleFrontController extends ModuleFrontController
             $this->redirectWithNotifications('index.php?controller=order&step=1');
         }
 
-        // IMPORTANTE: Eliminar el pago automático que crea PrestaShop
-        // Solo queremos crear ps_order_payment cuando se marquen las cuotas individuales como pagadas
-        $order = new Order($id_order);
-        if (Validate::isLoadedObject($order) && $order->reference) {
-            Db::getInstance()->delete('order_payment', 'order_reference = \'' . pSQL($order->reference) . '\'');
-        }
-
-        // Generar factura inmediatamente
-        // Esto permite que la factura exista desde el principio y se vayan registrando los pagos parciales
-        if (Validate::isLoadedObject($order) && !$order->hasInvoice()) {
-            $order->setInvoice(true);
-        }
+        // No generamos factura ni pago hasta que se completen todas las cuotas
+        // Todo se gestiona en nuestra tabla pagosuscriekp_payment
 
         // Crear la suscripción
         $subscription = new Subscription();

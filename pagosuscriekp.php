@@ -216,7 +216,7 @@ class PagoSuscriekp extends PaymentModule
             $orderState->hidden = false;
             $orderState->delivery = false;
             $orderState->logable = false;
-            $orderState->invoice = true;
+            $orderState->invoice = false; // NO generar factura hasta que se complete el pago
             $orderState->paid = false;
 
             $languages = Language::getLanguages(false);
