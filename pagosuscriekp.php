@@ -522,14 +522,15 @@ class PagoSuscriekp extends PaymentModule
         $active = (int)Tools::getValue('active');
 
         $installments_amounts = Tools::getValue('installment_amount');
-        $installments_days = Tools::getValue('installment_days');
+        $installments_date_types = Tools::getValue('installment_date_type');
+        $installments_date_values = Tools::getValue('installment_date_value');
 
         if (!$name) {
             $this->html .= $this->displayError($this->l('El nombre del plan es obligatorio'));
             return;
         }
 
-        if (empty($installments_amounts) || empty($installments_days)) {
+        if (empty($installments_amounts) || empty($installments_date_types) || empty($installments_date_values)) {
             $this->html .= $this->displayError($this->l('Debe añadir al menos una cuota'));
             return;
         }
@@ -561,12 +562,19 @@ class PagoSuscriekp extends PaymentModule
 
         // Insertar cuotas
         foreach ($installments_amounts as $index => $amount) {
-            $days = (int)$installments_days[$index];
             $amount = (float)$amount;
+            $date_type = pSQL($installments_date_types[$index]);
+            $date_value = (int)$installments_date_values[$index];
 
-            if ($amount > 0 && $days >= 0) {
-                $sql = 'INSERT INTO `' . _DB_PREFIX_ . 'pagosuscriekp_plan_installment` (id_plan, installment_number, amount, days_after_purchase)
-                        VALUES (' . $id_plan . ', ' . ($index + 1) . ', ' . $amount . ', ' . $days . ')';
+            if ($amount > 0) {
+                // Para el tipo "days", guardamos en days_after_purchase
+                // Para el tipo "fixed", guardamos en fixed_date_day
+                $days_after = ($date_type == 'days') ? $date_value : 0;
+                $fixed_day = ($date_type == 'fixed') ? $date_value : 'NULL';
+
+                $sql = 'INSERT INTO `' . _DB_PREFIX_ . 'pagosuscriekp_plan_installment`
+                        (id_plan, installment_number, amount, days_after_purchase, date_type, fixed_date_day)
+                        VALUES (' . $id_plan . ', ' . ($index + 1) . ', ' . $amount . ', ' . $days_after . ', "' . $date_type . '", ' . $fixed_day . ')';
                 Db::getInstance()->execute($sql);
             }
         }
@@ -1131,8 +1139,9 @@ class PagoSuscriekp extends PaymentModule
                                 <thead>
                                     <tr>
                                         <th style="width: 60px;" class="text-center">#</th>
-                                        <th>' . $this->l('Importe (€)') . '</th>
-                                        <th>' . $this->l('Días después de la compra') . '</th>
+                                        <th style="width: 150px;">' . $this->l('Importe (€)') . '</th>
+                                        <th style="width: 180px;">' . $this->l('Tipo de fecha') . '</th>
+                                        <th>' . $this->l('Valor') . '</th>
                                         <th style="width: 80px;" class="text-center">' . $this->l('Acción') . '</th>
                                     </tr>
                                 </thead>
@@ -1140,6 +1149,10 @@ class PagoSuscriekp extends PaymentModule
 
         $num = 1;
         foreach ($installments as $inst) {
+            $date_type = isset($inst['date_type']) ? $inst['date_type'] : 'days';
+            $date_value = $date_type == 'days' ? $inst['days_after_purchase'] : (isset($inst['fixed_date_day']) ? $inst['fixed_date_day'] : 1);
+            $is_first = ($num == 1);
+
             $html .= '<tr class="installment-row">
                         <td class="text-center"><strong class="installment-number">' . $num . '</strong></td>
                         <td>
@@ -1149,15 +1162,42 @@ class PagoSuscriekp extends PaymentModule
                                 <span class="input-group-addon">€</span>
                             </div>
                         </td>
-                        <td>
-                            <div class="input-group">
-                                <input type="number" name="installment_days[]" class="form-control"
-                                       min="0" value="' . $inst['days_after_purchase'] . '" required>
+                        <td>';
+
+            if ($is_first) {
+                $html .= '<span class="form-control-static">' . $this->l('Inmediato (0 días)') . '</span>
+                          <input type="hidden" name="installment_date_type[]" value="days">
+                          <input type="hidden" name="installment_date_value[]" value="0">';
+            } else {
+                $html .= '<select name="installment_date_type[]" class="form-control date-type-selector">
+                                <option value="days" ' . ($date_type == 'days' ? 'selected' : '') . '>' . $this->l('Días después') . '</option>
+                                <option value="fixed" ' . ($date_type == 'fixed' ? 'selected' : '') . '>' . $this->l('Día fijo del mes') . '</option>
+                            </select>';
+            }
+
+            $html .= '</td>
+                        <td>';
+
+            if ($is_first) {
+                $html .= '<span class="form-control-static">-</span>';
+            } else {
+                $html .= '<div class="date-value-container">
+                            <div class="input-group days-input" style="display: ' . ($date_type == 'days' ? 'flex' : 'none') . ';">
+                                <input type="number" name="installment_date_value[]" class="form-control date-value-field"
+                                       min="1" value="' . ($date_type == 'days' ? $date_value : 30) . '" ' . ($date_type == 'days' ? '' : 'disabled') . '>
                                 <span class="input-group-addon">' . $this->l('días') . '</span>
                             </div>
-                        </td>
+                            <div class="input-group fixed-input" style="display: ' . ($date_type == 'fixed' ? 'flex' : 'none') . ';">
+                                <span class="input-group-addon">' . $this->l('Día') . '</span>
+                                <input type="number" name="installment_date_value[]" class="form-control date-value-field"
+                                       min="1" max="28" value="' . ($date_type == 'fixed' ? $date_value : 15) . '" ' . ($date_type == 'fixed' ? '' : 'disabled') . '>
+                            </div>
+                        </div>';
+            }
+
+            $html .= '</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-danger btn-sm remove-installment">
+                            <button type="button" class="btn btn-danger btn-sm remove-installment" ' . ($is_first ? 'disabled' : '') . '>
                                 <i class="icon-trash"></i>
                             </button>
                         </td>
@@ -1168,14 +1208,14 @@ class PagoSuscriekp extends PaymentModule
         $html .= '                </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="4">
+                                        <td colspan="5">
                                             <button type="button" class="btn btn-default btn-sm" id="add_installment">
                                                 <i class="icon-plus"></i> ' . $this->l('Añadir cuota') . '
                                             </button>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colspan="3" class="text-right"><strong>' . $this->l('Total del plan:') . '</strong></td>
+                                        <td colspan="4" class="text-right"><strong>' . $this->l('Total del plan:') . '</strong></td>
                                         <td class="text-center"><strong id="plan_total">0.00 €</strong></td>
                                     </tr>
                                 </tfoot>
@@ -1225,10 +1265,23 @@ class PagoSuscriekp extends PaymentModule
                         </div>
                     </td>
                     <td>
-                        <div class="input-group">
-                            <input type="number" name="installment_days[]" class="form-control"
-                                   min="0" value="30" required>
-                            <span class="input-group-addon">' . $this->l('días') . '</span>
+                        <select name="installment_date_type[]" class="form-control date-type-selector">
+                            <option value="days" selected>' . $this->l('Días después') . '</option>
+                            <option value="fixed">' . $this->l('Día fijo del mes') . '</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="date-value-container">
+                            <div class="input-group days-input" style="display: flex;">
+                                <input type="number" name="installment_date_value[]" class="form-control date-value-field"
+                                       min="1" value="30">
+                                <span class="input-group-addon">' . $this->l('días') . '</span>
+                            </div>
+                            <div class="input-group fixed-input" style="display: none;">
+                                <span class="input-group-addon">' . $this->l('Día') . '</span>
+                                <input type="number" name="installment_date_value[]" class="form-control date-value-field"
+                                       min="1" max="28" value="15" disabled>
+                            </div>
                         </div>
                     </td>
                     <td class="text-center">
@@ -1254,6 +1307,22 @@ class PagoSuscriekp extends PaymentModule
 
             $(document).on("input", "input[name=\'installment_amount[]\']", function() {
                 calculatePlanTotal();
+            });
+
+            // Manejar cambio de tipo de fecha
+            $(document).on("change", ".date-type-selector", function() {
+                var $row = $(this).closest("tr");
+                var dateType = $(this).val();
+                var $daysInput = $row.find(".days-input");
+                var $fixedInput = $row.find(".fixed-input");
+
+                if (dateType === "days") {
+                    $daysInput.show().find("input").prop("disabled", false);
+                    $fixedInput.hide().find("input").prop("disabled", true);
+                } else {
+                    $daysInput.hide().find("input").prop("disabled", true);
+                    $fixedInput.show().find("input").prop("disabled", false);
+                }
             });
 
             $("#id_product").on("change", function() {

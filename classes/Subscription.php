@@ -121,11 +121,32 @@ class Subscription extends ObjectModel
             $payment->installment_number = $installment['installment_number'];
             $payment->amount = $installment['amount'];
 
-            // Calcular fecha de vencimiento ACUMULATIVA
-            // Si la primera cuota es en 0 días, se paga inmediatamente
-            // Si la segunda cuota es en 30 días, es 30 días DESPUÉS de la primera
-            // Si la tercera cuota es en 30 días, es 30 días DESPUÉS de la segunda
-            $due_date = date('Y-m-d', strtotime($previous_due_date . ' +' . $installment['days_after_purchase'] . ' days'));
+            // Calcular fecha de vencimiento según el tipo
+            $date_type = isset($installment['date_type']) ? $installment['date_type'] : 'days';
+
+            if ($date_type == 'fixed' && $installment['fixed_date_day']) {
+                // Día fijo del mes: calcular siguiente ocurrencia del día especificado
+                $fixed_day = (int)$installment['fixed_date_day'];
+                $current_date = strtotime($previous_due_date);
+                $current_day = (int)date('d', $current_date);
+
+                // Si el día fijo ya pasó en el mes actual, ir al mes siguiente
+                if ($current_day >= $fixed_day) {
+                    // Próximo mes
+                    $next_month = date('Y-m-01', strtotime($previous_due_date . ' +1 month'));
+                    $due_date = date('Y-m-' . str_pad($fixed_day, 2, '0', STR_PAD_LEFT), strtotime($next_month));
+                } else {
+                    // Mismo mes
+                    $due_date = date('Y-m-' . str_pad($fixed_day, 2, '0', STR_PAD_LEFT), $current_date);
+                }
+            } else {
+                // Días después: calcular acumulativamente
+                // La primera cuota es inmediata (0 días)
+                // Las siguientes son X días después de la cuota anterior
+                $days_after = (int)$installment['days_after_purchase'];
+                $due_date = date('Y-m-d', strtotime($previous_due_date . ' +' . $days_after . ' days'));
+            }
+
             $payment->due_date = $due_date;
             $payment->paid = 0;
 
